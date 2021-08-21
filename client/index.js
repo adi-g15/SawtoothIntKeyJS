@@ -20,22 +20,62 @@ var decodedPriv=Buffer.from(hexPriv,'hex')
 var privateBuffer = {
     privateKeyBytes: decodedPriv
   }
-  console.log("after decoding hexadecimal- ",privateBuffer)
 
 var signer1 = new CryptoFactory(context).newSigner(privateBuffer);
-console.log("Signer-",signer1);
-console.log("Second signature- ",signer1.sign("abcdefgh"))
 
 
 
 //Encoding of Payload
 const cbor = require('cbor')
 
-const payload = {
-    Verb: 'set',
-    Name: 'Arshad',
-    Value: 20
+const process = require("process");
+console.log("Command line arguments were: ", process.argv);
+
+// client set arshad 15 
+const Verb = process.argv[2];
+const User = process.argv[3];
+
+if ( Verb === "register" ) {
+    // client register arshad
+    payload = {
+        Verb: "set",
+        Name: User,
+        Value: 0
+    };
+} else if ( Verb === "set" ) {
+    // client set arshad 15
+    payload = {
+        Verb: "set",
+        Name: User,
+        Value: process.argv[4]
+    };
+} else if ( Verb === "inc" ) {
+    // client inc arshad 15
+    payload = {
+        Verb: "inc",
+        Name: User,
+        Value: process.argv[4]
+    };
+} else if ( Verb === "dec" ) {
+    // client inc arshad 15
+    payload = {
+        Verb: "decrement",
+        Name: User,
+        Value: process.argv[4]
+    };
+} else if ( Verb === "transfer" ) {
+    // client transfer arshad utkarsh 15
+    const Receiver = process.argv[3];
+    const Value = process.argv[4];  // transfer amount
+
+    payload = {
+        Verb: "transfer",
+        Name: User,
+        Receiver: Receiver,
+        Value: Value
+    };
 }
+
 //const payloadBytes =Buffer.from(JSON.stringify(payload))
 const payloadBytes = cbor.encode(payload)
 
@@ -162,6 +202,7 @@ const batchListBytes = protobuf.BatchList.encode({
 console.log("BatchListAsbytes- ",batchListBytes)
 
 const request = require('request')
+const { exit } = require('process')
 
 request.post({
     url: restapiURL+'/batches',

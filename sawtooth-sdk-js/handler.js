@@ -54,6 +54,11 @@ const _setEntry = (context, address, stateValue) => {
   return context.setState(entries)
 }
 
+function _applyTransfer (context, address, name, receiver, value) {
+  _applyInc(context, address, receiver, value);
+  _applyDec(context, address, name, value);
+}
+
 const _applySet = (context, address, name, value) => (possibleAddressValues) => {
   let stateValueRep = possibleAddressValues[address]
 
@@ -163,6 +168,8 @@ class IntegerKeyHandler extends TransactionHandler {
           actionFn = _applyDec
         } else if (verb === 'inc') {
           actionFn = _applyInc
+        } else if (verb === "transfer") {
+          actionFn = _applyTransfer
         } else {
           throw new InvalidTransaction(`Verb must be set, inc, dec not ${verb}`)
         }
@@ -174,9 +181,15 @@ class IntegerKeyHandler extends TransactionHandler {
         let getPromise = context.getState([address])
 
         // Apply the action to the promise's result:
-        let actionPromise = getPromise.then(
-          actionFn(context, address, name, value)
-        )
+        if ( verb === "transfer" ) {
+          let actionPromise = getPromise.then(
+            _applyTransfer(context, address, name, Update.Receiver, value)
+          )
+        } else {
+          let actionPromise = getPromise.then(
+            actionFn(context, address, name, value)
+          )
+        }
 
         // Validate that the action promise results in the correctly set address:
         return actionPromise.then(addresses => {
